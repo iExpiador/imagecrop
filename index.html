@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImageTools - Recorta Imágenes con Formas</title>
+    <style>
+        :root {
+            --primary-color: #6a11cb;
+            --secondary-color: #2575fc;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --card-bg: #f8f9fa;
+            --border-color: #dee2e6;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --header-bg: #ffffff;
+            --footer-bg: #2d3436;
+            --footer-text: #ffffff;
+        }
+
+        .dark-mode {
+            --primary-color: #8a2be2;
+            --secondary-color: #4169e1;
+            --bg-color: #1a1a2e;
+            --text-color: #e0e0e0;
+            --card-bg: #2d2d44;
+            --border-color: #444466;
+            --shadow: 0 10px 30px rgba(0,0,0,0.3);
+            --header-bg: #16213e;
+            --footer-bg: #0f0f1a;
+            --footer-text: #cccccc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            transition: all 0.3s ease;
+        }
+
+        /* Header y Navegación */
+        .header {
+            background-color: var(--header-bg);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: rotate(30deg);
+        }
+
+        /* Contenedor Principal */
+        .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Área de Upload */
+        .upload-area {
+            border: 3px dashed var(--border-color);
+            border-radius: 20px;
+            padding: 80px 20px;
+            text-align: center;
+            margin: 40px 0;
+            background-color: var(--card-bg);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(106, 17, 203, 0.05);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Workspace */
+        .workspace {
+            display: none;
+            grid-template-columns: 1fr 350px;
+            gap: 40px;
+            margin: 50px 0;
+        }
+
+        @media (max-width: 992px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .editor-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            position: relative;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #imageCanvas, #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #overlayCanvas {
+            cursor: move;
+        }
+
+        /* Panel de Controles */
+        .controls-panel {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .controls-panel h3 {
+            margin-bottom: 25px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+
+        .shapes-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .shape-option {
+            aspect-ratio: 1;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-color);
+        }
+
+        .shape-option:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.2);
+        }
+
+        .shape-option.active {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3);
+        }
+
+        .controls-group {
+            margin: 25px 0;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: var(--border-color);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 3px solid var(--bg-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(106, 17, 203, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--footer-bg);
+            color: var(--footer-text);
+            padding: 60px 0 30px;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+        }
+
+        .footer-section h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .footer-section p {
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: var(--footer-text);
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            color: var(--primary-color);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                height: auto;
+                padding: 15px;
+            }
+
+            .nav-links {
+                margin: 20px 0;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .shapes-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .shapes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .upload-area {
+                padding: 50px 15px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-shapes"></i>
+                <span>ShapeCrop</span>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="#inicio" class="active">Inicio</a></li>
+                <li><a href="#blog">Blog</a></li>
+                <li><a href="#herramientas">Herramientas</a></li>
+                <li><a href="#acerca">Acerca de</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+            
+            <div class="header-controls">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="main-container">
+        <section class="hero" id="inicio">
+            <h1>Recortador Avanzado con Formas</h1>
+            <p>Transforma tus imágenes con formas geométricas perfectas. Totalmente gratuito y seguro.</p>
+        </section>
+
+        <!-- Área de Upload -->
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h2 style="margin-bottom: 15px; color: var(--primary-color);">Suelta tu imagen aquí</h2>
+            <p style="color: var(--text-color); opacity: 0.8; margin-bottom: 20px;">
+                Arrastra y suelta tu imagen o haz clic para seleccionar
+            </p>
+            <input type="file" id="fileInput" class="file-input" accept="image/*">
+            <p style="font-size: 0.9rem; opacity: 0.7;">
+                Formatos soportados: JPG, PNG, GIF, BMP • Máximo 10MB
+            </p>
+        </div>
+
+        <!-- Workspace -->
+        <div class="workspace" id="workspace">
+            <div class="editor-container">
+                <canvas id="imageCanvas"></canvas>
+                <canvas id="overlayCanvas"></canvas>
+            </div>
+
+            <div class="controls-panel">
+                <h3><i class="fas fa-sliders-h"></i> Controles de Forma</h3>
+                
+                <div class="shapes-grid" id="shapesGrid">
+                    <!-- Las formas se generarán con JavaScript -->
+                </div>
+
+                <div class="controls-group">
+                    <div class="control-label">
+                        <span><i class="fas fa-expand-alt"></i> Tamaño</span>
+                        <span id="sizeValue">150px</span>
+                    </div>
+                    <input type="range" class="slider" id="sizeSlider" min="50" max="400" value="150">
+                </div>
+
+                <div class="controls-group">
+                    <div class="control-label">
+                        <span><i class="fas fa-rotate-right"></i> Rotación</span>
+                        <span id="rotationValue">0°</span>
+                    </div>
+                    <input type="range" class="slider" id="rotationSlider" min="0" max="360" value="0">
+                </div>
+
+                <div class="controls-group">
+                    <div class="control-label">
+                        <span><i class="fas fa-border-style"></i> Grosor del Borde</span>
+                        <span id="borderValue">0px</span>
+                    </div>
+                    <input type="range" class="slider" id="borderSlider" min="0" max="20" value="0">
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="downloadImage()">
+                        <i class="fas fa-download"></i> Descargar Imagen Recortada
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetTool()">
+                        <i class="fas fa-redo"></i> Cambiar Imagen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" id="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>ShapeCrop</h3>
+                <p>Herramienta gratuita para recortar imágenes en diferentes formas geométricas. Perfecto para avatares, logos y diseño creativo.</p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Enlaces Rápidos</h3>
+                <ul class="footer-links">
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#blog">Blog</a></li>
+                    <li><a href="#herramientas">Herramientas</a></li>
+                    <li><a href="#acerca">Acerca de</a></li>
+                    <li><a href="#contacto">Contacto</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Recursos</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Guía de uso</a></li>
+                    <li><a href="#">Preguntas frecuentes</a></li>
+                    <li><a href="#">Política de privacidad</a></li>
+                    <li><a href="#">Términos de servicio</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Contacto</h3>
+                <p style="margin-bottom: 10px;">
+                    <i class="fas fa-envelope" style="margin-right: 10px;"></i>
+                    soporte@shapecrop.com
+                </p>
+                <p>
+                    <i class="fas fa-heart" style="color: #ff4757; margin-right: 10px;"></i>
+                    Hecho con pasión para la comunidad
+                </p>
+            </div>
+        </div>
+        
+        <div class="copyright">
+            <p>&copy; 2024 ShapeCrop. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Configuración de formas (corregidas)
+        const shapes = [
+            { 
+                id: 'circle', 
+                name: 'Círculo', 
+                icon: '●', 
+                draw: drawCircle 
+            },
+            { 
+                id: 'square', 
+                name: 'Cuadrado', 
+                icon: '■', 
+                draw: drawSquare 
+            },
+            { 
+                id: 'rounded-square', 
+                name: 'Cuadrado Redondeado', 
+                icon: '▢', 
+                draw: drawRoundedSquare 
+            },
+            { 
+                id: 'heart', 
+                name: 'Corazón', 
+                icon: '❤️', 
+                draw: drawHeart 
+            },
+            { 
+                id: 'star', 
+                name: 'Estrella', 
+                icon: '★', 
+                draw: drawStar 
+            },
+            { 
+                id: 'hexagon', 
+                name: 'Hexágono', 
+                icon: '⬢', 
+                draw: drawHexagon 
+            },
+            { 
+                id: 'triangle', 
+                name: 'Triángulo', 
+                icon: '▲', 
+                draw: drawTriangle 
+            },
+            { 
+                id: 'diamond', 
+                name: 'Diamante', 
+                icon: '◆', 
+                draw: drawDiamond 
+            },
+            { 
+                id: 'ellipse', 
+                name: 'Elipse', 
+                icon: '⬭', 
+                draw: drawEllipse 
+            },
+            { 
+                id: 'octagon', 
+                name: 'Octágono', 
+                icon: '⬡', 
+                draw: drawOctagon 
+            },
+            { 
+                id: 'pentagon', 
+                name: 'Pentágono', 
+                icon: '⬟', 
+                draw: drawPentagon 
+            }
+        ];
+
+        // Variables de estado
+        let originalImage = null;
+        let currentShape = shapes[0];
+        let cropSize = 150;
+        let cropX = 250;
+        let cropY = 250;
+        let rotation = 0;
+        let borderSize = 0;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let imageBounds = null;
+        let isDarkMode = false;
+
+        // Elementos del DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const workspace = document.getElementById('workspace');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const imageCtx = imageCanvas.getContext('2d');
+        const overlayCtx = overlayCanvas.getContext('2d');
+        const shapesGrid = document.getElementById('shapesGrid');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Inicialización
+        function init() {
+            console.log("Inicializando ShapeCrop...");
+            createShapeButtons();
+            setupEventListeners();
+            setupTheme();
+            updateCanvasSize();
+        }
+
+        // Modo Oscuro
+        function setupTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                enableDarkMode();
+            }
+            
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+
+        function toggleTheme() {
+            if (isDarkMode) {
+                disableDarkMode();
+            } else {
+                enableDarkMode();
+            }
+        }
+
+        function enableDarkMode() {
+            document.body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            isDarkMode = true;
+            localStorage.setItem('theme', 'dark');
+            console.log("Modo oscuro activado");
+        }
+
+        function disableDarkMode() {
+            document.body.classList.remove('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            isDarkMode = false;
+            localStorage.setItem('theme', 'light');
+            console.log("Modo claro activado");
+        }
+
+        // Navegación
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Scroll suave para enlaces internos
+                const targetId = this.getAttribute('href');
+                if (targetId.startsWith('#')) {
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // Crear botones de formas
+        function createShapeButtons() {
+            shapesGrid.innerHTML = '';
+            shapes.forEach(shape => {
+                const button = document.createElement('button');
+                button.className = 'shape-option';
+                button.innerHTML = shape.icon;
+                button.title = shape.name;
+                button.dataset.shape = shape.id;
+                
+                if (shape.id === currentShape.id) {
+                    button.classList.add('active');
+                }
+                
+                button.addEventListener('click', () => selectShape(shape));
+                shapesGrid.appendChild(button);
+            });
+        }
+
+        function selectShape(shape) {
+            currentShape = shape;
+            document.querySelectorAll('.shape-option').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.shape === shape.id) {
+                    btn.classList.add('active');
+                }
+            });
+            drawOverlay();
+            console.log(`Forma seleccionada: ${shape.name}`);
+        }
+
+        // Configurar eventos
+        function setupEventListeners() {
+            // Subida de archivos
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'var(--primary-color)';
+                uploadArea.style.background = 'rgba(106, 17, 203, 0.05)';
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = 'var(--border-color)';
+                uploadArea.style.background = '';
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'var(--border-color)';
+                uploadArea.style.background = '';
+                if (e.dataTransfer.files.length) {
+                    loadImage(e.dataTransfer.files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    loadImage(e.target.files[0]);
+                }
+            });
+
+            // Controles deslizantes
+            document.getElementById('sizeSlider').addEventListener('input', (e) => {
+                cropSize = parseInt(e.target.value);
+                document.getElementById('sizeValue').textContent = cropSize + 'px';
+                drawOverlay();
+            });
+            
+            document.getElementById('rotationSlider').addEventListener('input', (e) => {
+                rotation = parseInt(e.target.value);
+                document.getElementById('rotationValue').textContent = rotation + '°';
+                drawOverlay();
+            });
+            
+            document.getElementById('borderSlider').addEventListener('input', (e) => {
+                borderSize = parseInt(e.target.value);
+                document.getElementById('borderValue').textContent = borderSize + 'px';
+                drawOverlay();
+            });
+
+            // Arrastrar la forma
+            overlayCanvas.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            // Redimensionar ventana
+            window.addEventListener('resize', updateCanvasSize);
+        }
+
+        // Manejo de imágenes
+        function loadImage(file) {
+            if (!file.type.match('image.*')) {
+                alert('Por favor, selecciona un archivo de imagen válido (JPG, PNG, GIF, BMP)');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                alert('La imagen es demasiado grande. Máximo 10MB.');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImage = new Image();
+                originalImage.onload = function() {
+                    console.log(`Imagen cargada: ${originalImage.width}x${originalImage.height}px`);
+                    workspace.style.display = 'grid';
+                    uploadArea.style.display = 'none';
+                    updateCanvasSize();
+                    drawImage();
+                    drawOverlay();
+                };
+                originalImage.onerror = function() {
+                    alert('Error al cargar la imagen. Intenta con otra.');
+                };
+                originalImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateCanvasSize() {
+            const container = document.querySelector('.editor-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            imageCanvas.width = width;
+            imageCanvas.height = height;
+            overlayCanvas.width = width;
+            overlayCanvas.height = height;
+            
+            cropX = width / 2;
+            cropY = height / 2;
+            
+            if (originalImage) {
+                drawImage();
+                drawOverlay();
+            }
+        }
+
+        function drawImage() {
+            if (!originalImage) return;
+            
+            const canvas = imageCanvas;
+            const ctx = imageCtx;
+            const img = originalImage;
+            
+            // Fondo
+            ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--card-bg');
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Calcular dimensiones manteniendo proporción
+            const imgRatio = img.width / img.height;
+            const canvasRatio = canvas.width / canvas.height;
+            
+            let drawWidth, drawHeight, offsetX, offsetY;
+            
+            if (imgRatio > canvasRatio) {
+                drawWidth = canvas.width;
+                drawHeight = canvas.width / imgRatio;
+                offsetX = 0;
+                offsetY = (canvas.height - drawHeight) / 2;
+            } else {
+                drawHeight = canvas.height;
+                drawWidth = canvas.height * imgRatio;
+                offsetX = (canvas.width - drawWidth) / 2;
+                offsetY = 0;
+            }
+            
+            // Dibujar imagen
+            ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+            
+            // Guardar información para el recorte
+            imageBounds = {
+                x: offsetX,
+                y: offsetY,
+                width: drawWidth,
+                height: drawHeight,
+                scale: drawWidth / img.width
+            };
+        }
+
+        function drawOverlay() {
+            if (!originalImage) return;
+            
+            const canvas = overlayCanvas;
+            const ctx = overlayCtx;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Estilo según modo oscuro
+            const shapeColor = isDarkMode ? '#ffffff' : '#ff0000';
+            
+            ctx.save();
+            ctx.translate(cropX, cropY);
+            ctx.rotate(rotation * Math.PI / 180);
+            
+            // Forma principal (línea punteada)
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = shapeColor;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            currentShape.draw(ctx, cropSize);
+            ctx.stroke();
+            
+            // Borde
+            if (borderSize > 0) {
+                ctx.lineWidth = borderSize;
+                ctx.strokeStyle = `rgba(${isDarkMode ? '255,255,255' : '106,17,203'}, 0.5)`;
+                ctx.setLineDash([]);
+                currentShape.draw(ctx, cropSize - borderSize * 2);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+            
+            // Punto central
+            ctx.fillStyle = shapeColor;
+            ctx.beginPath();
+            ctx.arc(cropX, cropY, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // FUNCIONES DE DIBUJO DE FORMAS (CORREGIDAS)
+        function drawCircle(ctx, size) {
+            ctx.arc(0, 0, size/2, 0, Math.PI * 2);
+        }
+
+        function drawSquare(ctx, size) {
+            const half = size/2;
+            ctx.rect(-half, -half, size, size);
+        }
+
+        function drawRoundedSquare(ctx, size) {
+            const half = size/2;
+            const radius = size * 0.1;
+            ctx.moveTo(-half + radius, -half);
+            ctx.lineTo(half - radius, -half);
+            ctx.quadraticCurveTo(half, -half, half, -half + radius);
+            ctx.lineTo(half, half - radius);
+            ctx.quadraticCurveTo(half, half, half - radius, half);
+            ctx.lineTo(-half + radius, half);
+            ctx.quadraticCurveTo(-half, half, -half, half - radius);
+            ctx.lineTo(-half, -half + radius);
+            ctx.quadraticCurveTo(-half, -half, -half + radius, -half);
+            ctx.closePath();
+        }
+
+        // CORAZÓN MEJORADO
+        function drawHeart(ctx, size) {
+            const heartHeight = size * 0.8;
+            const heartWidth = size * 0.8;
+            
+            ctx.moveTo(0, size/4);
+            
+            // Curvas izquierda superior
+            ctx.bezierCurveTo(
+                -heartWidth/2, -heartHeight/4,
+                -heartWidth/2, heartHeight/4,
+                0, heartHeight/2
+            );
+            
+            // Curvas derecha superior
+            ctx.bezierCurveTo(
+                heartWidth/2, heartHeight/4,
+                heartWidth/2, -heartHeight/4,
+                0, size/4
+            );
+            
+            // Punta inferior
+            ctx.lineTo(0, size/2);
+            ctx.closePath();
+        }
+
+        function drawStar(ctx, size) {
+            const outer = size/2;
+            const inner = size/4;
+            for (let i = 0; i < 10; i++) {
+                const radius = i % 2 === 0 ? outer : inner;
+                const angle = (Math.PI * i) / 5;
+                const x = Math.sin(angle) * radius;
+                const y = -Math.cos(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+        }
+
+        function drawHexagon(ctx, size) {
+            drawPolygon(ctx, 6, size/2);
+        }
+
+        function drawTriangle(ctx, size) {
+            drawPolygon(ctx, 3, size/2);
+        }
+
+        function drawDiamond(ctx, size) {
+            const half = size/2;
+            ctx.moveTo(0, -half);
+            ctx.lineTo(half, 0);
+            ctx.lineTo(0, half);
+            ctx.lineTo(-half, 0);
+            ctx.closePath();
+        }
+
+        function drawEllipse(ctx, size) {
+            ctx.ellipse(0, 0, size/2, size/3, 0, 0, Math.PI * 2);
+        }
+
+        function drawOctagon(ctx, size) {
+            drawPolygon(ctx, 8, size/2);
+        }
+
+        function drawPentagon(ctx, size) {
+            drawPolygon(ctx, 5, size/2);
+        }
+
+        function drawPolygon(ctx, sides, radius) {
+            for (let i = 0; i < sides; i++) {
+                const angle = (Math.PI * 2 * i) / sides - Math.PI / 2;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+        }
+
+        // Funciones de arrastre
+        function startDrag(e) {
+            const rect = overlayCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const distance = Math.sqrt(Math.pow(x - cropX, 2) + Math.pow(y - cropY, 2));
+            if (distance <= cropSize/2 + 20) {
+                isDragging = true;
+                dragStartX = x - cropX;
+                dragStartY = y - cropY;
+                overlayCanvas.style.cursor = 'grabbing';
+            }
+        }
+
+        function doDrag(e) {
+            if (!isDragging) return;
+            
+            const rect = overlayCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            cropX = x - dragStartX;
+            cropY = y - dragStartY;
+            
+            cropX = Math.max(cropSize/2, Math.min(overlayCanvas.width - cropSize/2, cropX));
+            cropY = Math.max(cropSize/2, Math.min(overlayCanvas.height - cropSize/2, cropY));
+            
+            drawOverlay();
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            overlayCanvas.style.cursor = 'move';
+        }
+
+        // Descargar imagen
+        function downloadImage() {
+            if (!originalImage || !imageBounds) {
+                alert('Por favor, carga una imagen primero');
+                return;
+            }
+            
+            const outputCanvas = document.createElement('canvas');
+            const outputSize = Math.max(cropSize, 100);
+            outputCanvas.width = outputSize;
+            outputCanvas.height = outputSize;
+            const outputCtx = outputCanvas.getContext('2d');
+            
+            outputCtx.clearRect(0, 0, outputSize, outputSize);
+            
+            const bounds = imageBounds;
+            const scale = bounds.scale;
+            const sourceX = (cropX - cropSize/2 - bounds.x) / scale;
+            const sourceY = (cropY - cropSize/2 - bounds.y) / scale;
+            const sourceSize = cropSize / scale;
+            
+            outputCtx.save();
+            outputCtx.translate(outputSize/2, outputSize/2);
+            outputCtx.rotate(rotation * Math.PI / 180);
+            currentShape.draw(outputCtx, cropSize);
+            outputCtx.clip();
+            
+            const safeSourceX = Math.max(0, Math.min(sourceX, originalImage.width - sourceSize));
+            const safeSourceY = Math.max(0, Math.min(sourceY, originalImage.height - sourceSize));
+            const safeSourceSize = Math.min(sourceSize, originalImage.width - safeSourceX, originalImage.height - safeSourceY);
+            
+            if (safeSourceSize > 0) {
+                outputCtx.drawImage(
+                    originalImage,
+                    safeSourceX, safeSourceY, safeSourceSize, safeSourceSize,
+                    -cropSize/2, -cropSize/2, cropSize, cropSize
+                );
+            }
+            
+            outputCtx.restore();
+            
+            if (borderSize > 0) {
+                outputCtx.save();
+                outputCtx.translate(outputSize/2, outputSize/2);
+                outputCtx.rotate(rotation * Math.PI / 180);
+                outputCtx.lineWidth = borderSize;
+                outputCtx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--primary-color');
+                currentShape.draw(outputCtx, cropSize);
+                outputCtx.stroke();
+                outputCtx.restore();
+            }
+            
+            const link = document.createElement('a');
+            link.download = `ReticenciaXAT-${Date.now()}.png`;
+            link.href = outputCanvas.toDataURL('image/png');
+            link.click();
+            
+            alert(`¡Imagen descargada como ${link.download}!`);
+        }
+
+        function resetTool() {
+            workspace.style.display = 'none';
+            uploadArea.style.display = 'block';
+            originalImage = null;
+            imageBounds = null;
+            fileInput.value = '';
+            
+            cropSize = 150;
+            cropX = 250;
+            cropY = 250;
+            rotation = 0;
+            borderSize = 0;
+            
+            document.getElementById('sizeSlider').value = 150;
+            document.getElementById('rotationSlider').value = 0;
+            document.getElementById('borderSlider').value = 0;
+            document.getElementById('sizeValue').textContent = '150px';
+            document.getElementById('rotationValue').textContent = '0°';
+            document.getElementById('borderValue').textContent = '0px';
+            
+            imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            
+            selectShape(shapes[0]);
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
